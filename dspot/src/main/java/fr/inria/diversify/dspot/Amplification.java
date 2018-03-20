@@ -3,6 +3,7 @@ package fr.inria.diversify.dspot;
 import fr.inria.diversify.dspot.amplifier.Amplifier;
 import fr.inria.diversify.dspot.assertGenerator.AssertGenerator;
 import fr.inria.diversify.dspot.selector.TestSelector;
+import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
 import fr.inria.diversify.utils.compilation.TestCompiler;
 import fr.inria.diversify.utils.AmplificationChecker;
@@ -267,8 +268,11 @@ public class Amplification {
 	 */
 	private List<CtMethod<?>> inputAmplifyTest(CtMethod test) {
 		return amplifiers.stream()
-				.flatMap(amplifier -> amplifier.apply(test).stream()).
-						map(CtMethod::getBody)
+				.flatMap(amplifier -> {
+					List<CtMethod> amplifiedMethods = amplifier.apply(test);
+					Counter.updateInputOf(test, amplifiedMethods.size());
+					return amplifiedMethods.stream();
+				}).map(CtMethod::getBody)
 				.distinct()
 				.map(body -> body.getParent(CtMethod.class))
 				.map(amplifiedTest ->

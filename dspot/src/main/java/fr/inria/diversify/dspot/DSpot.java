@@ -7,14 +7,10 @@ import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
 import fr.inria.diversify.dspot.amplifier.*;
 import fr.inria.diversify.dspot.selector.CloverCoverageSelector;
 import fr.inria.diversify.dspot.selector.TestSelector;
+import fr.inria.diversify.utils.*;
 import fr.inria.diversify.utils.json.ClassTimeJSON;
-import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
 import fr.inria.diversify.utils.json.ProjectTimeJSON;
-import fr.inria.diversify.utils.AmplificationChecker;
-import fr.inria.diversify.utils.AmplificationHelper;
-import fr.inria.diversify.utils.DSpotUtils;
-import fr.inria.diversify.utils.Initializer;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.diversify.utils.sosiefier.InputProgram;
 import org.apache.commons.io.FileUtils;
@@ -106,6 +102,7 @@ public class DSpot {
         this.numberOfIterations = numberOfIterations;
         this.testSelector = testSelector;
         this.testSelector.init(this.inputConfiguration);
+        this.compiler.getFactory().getEnvironment().setModelChangeListener(new AmplificationListener());
 
         final String[] splittedPath = inputProgram.getProgramDir().split("/");
         final File projectJsonFile = new File(this.inputConfiguration.getOutputDirectory() +

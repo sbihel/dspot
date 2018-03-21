@@ -263,6 +263,8 @@ public class Amplification {
 	/**
 	 * Input amplification for a single test.
 	 *
+	 * Updates the counter of amplifications, assuming 1 amplification per generated test method.
+	 *
 	 * @param test Test method
 	 * @return New generated tests
 	 */

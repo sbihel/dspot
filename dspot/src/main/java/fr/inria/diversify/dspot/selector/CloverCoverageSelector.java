@@ -7,9 +7,9 @@ import fr.inria.diversify.utils.AmplificationHelper;
 import fr.inria.diversify.utils.DSpotUtils;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.diversify.utils.sosiefier.InputProgram;
-import fr.inria.stamp.EntryPoint;
+import eu.stamp.project.testrunner.EntryPoint;
 import fr.inria.stamp.coverage.clover.CloverExecutor;
-import fr.inria.stamp.runner.coverage.Coverage;
+import eu.stamp.project.testrunner.runner.coverage.Coverage;
 import org.apache.commons.io.FileUtils;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -70,9 +71,13 @@ public class CloverCoverageSelector extends TakeAllSelector {
                     .buildClasspath(program.getProgramDir()) +
                     AmplificationHelper.PATH_SEPARATOR + classesOfProject;
 
-            this.initialCoverage = EntryPoint.runCoverageOnTestClasses(classpath, classesOfProject,
-                    DSpotUtils.getAllTestClasses(configuration)
-            );
+            try {
+                this.initialCoverage = EntryPoint.runCoverageOnTestClasses(classpath, classesOfProject,
+                        DSpotUtils.getAllTestClasses(configuration)
+                );
+            } catch (TimeoutException e) {
+                throw new RuntimeException(e);
+            }
         }
         if (testsToBeAmplified.size() > 1) {
             final List<CtMethod<?>> collect = testsToBeAmplified.stream()
@@ -179,9 +184,13 @@ public class CloverCoverageSelector extends TakeAllSelector {
         DSpotCompiler.compile(DSpotCompiler.pathToTmpTestSources, classpath,
                 new File(this.program.getProgramDir() + "/" + this.program.getTestClassesDir()));
 
-        return EntryPoint.runCoverageOnTestClasses(classpath, classesOfProject,
-                clone.getQualifiedName()
-        );
+        try {
+            return EntryPoint.runCoverageOnTestClasses(classpath, classesOfProject,
+                    clone.getQualifiedName()
+            );
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private final static String PATH_TO_COPIED_FILES = "target/dspot/copy/";

@@ -1,7 +1,7 @@
 package fr.inria.diversify.dspot.amplifier.value;
 
-import fr.inria.Utils;
 import fr.inria.AbstractTest;
+import fr.inria.Utils;
 import fr.inria.diversify.utils.AmplificationHelper;
 import org.junit.Test;
 import spoon.reflect.code.CtLiteral;
@@ -10,6 +10,7 @@ import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,9 +31,7 @@ public class TestValueCreator extends AbstractTest {
 		final CtTypeReference<?> reference = factory.Class().get(new ArrayList<String>().getClass()).getReference();
 		reference.addActualTypeArgument(factory.Type().createReference(String.class));
 
-		assertEquals("java.util.ArrayList<java.lang.String> __DSPOT_vc_0 = java.util.Collections.emptyList()",
-				ValueCreator.createRandomLocalVar(reference).toString());
-		assertEquals("java.util.ArrayList<java.lang.String> __DSPOT_vc_1 = java.util.Collections.singletonList(\"mEp_A=f&o(QqZ.%_r;?r\")",
+		assertEquals("java.util.ArrayList<java.lang.String> __DSPOT_vc_0 = new java.util.ArrayList<java.lang.String>(java.util.Collections.emptyList())",
 				ValueCreator.createRandomLocalVar(reference).toString());
 	}
 
@@ -69,6 +68,14 @@ public class TestValueCreator extends AbstractTest {
 
 		assertEquals("__DSPOT_vc_" + count, randomLocalVar.getSimpleName());
 		assertEquals(factory.Type().createReference("fr.inria.mutation.ClassUnderTest"), randomLocalVar.getType());
+
+		final CtTypeReference<?> listReference = factory.Type().createReference("java.util.List");
+		listReference.setActualTypeArguments(Collections.singletonList(factory.Type().createArrayReference("int")));
+		randomLocalVar = ValueCreator.createRandomLocalVar(listReference);
+		count++;
+
+		assertEquals("__DSPOT_vc_" + count, randomLocalVar.getSimpleName());
+		assertEquals("java.util.List<int[]>", randomLocalVar.getType().toString());
 	}
 
 	@Test

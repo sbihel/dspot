@@ -1,18 +1,16 @@
 package fr.inria.diversify.dspot;
 
+import eu.stamp.project.testrunner.runner.test.TestListener;
 import fr.inria.diversify.dspot.amplifier.Amplifier;
 import fr.inria.diversify.dspot.assertGenerator.AssertGenerator;
 import fr.inria.diversify.dspot.selector.TestSelector;
-import fr.inria.diversify.utils.Counter;
-import fr.inria.diversify.utils.compilation.DSpotCompiler;
-import fr.inria.diversify.utils.compilation.TestCompiler;
 import fr.inria.diversify.utils.AmplificationChecker;
 import fr.inria.diversify.utils.AmplificationHelper;
 import fr.inria.diversify.utils.DSpotUtils;
+import fr.inria.diversify.utils.Counter;
+import fr.inria.diversify.utils.compilation.DSpotCompiler;
+import fr.inria.diversify.utils.compilation.TestCompiler;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
-import fr.inria.stamp.test.listener.TestListener;
-import org.junit.runner.Description;
-import org.junit.runner.notification.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spoon.reflect.declaration.CtMethod;
@@ -24,7 +22,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -101,7 +103,7 @@ public class Amplification {
 		for (int i = 0; i < tests.size(); i++) {
 			CtMethod test = tests.get(i);
 			LOGGER.info("amp {} ({}/{})", test.getSimpleName(), i + 1, tests.size());
-			TestListener result = compileAndRunTests(classTest, Collections.singletonList(tests.get(i)));
+			final TestListener result = compileAndRunTests(classTest, Collections.singletonList(tests.get(i)));
 			if (result != null) {
 				if (result.getFailingTests().isEmpty()
 						&& !result.getRunningTests().isEmpty()) {
@@ -158,15 +160,16 @@ public class Amplification {
 			} else {
 				currentTestList = testsWithAssertions;
 			}
-			TestListener result = compileAndRunTests(classTest, currentTestList);
+			final TestListener result = compileAndRunTests(classTest, currentTestList);
 			if (result == null) {
 				continue;
 			} else if (!result.getFailingTests().isEmpty()) {
 				LOGGER.warn("Discarding failing test cases");
-				final Set<String> failingTestCase = result.getFailingTests().stream()
-						.map(Failure::getDescription)
-						.map(Description::getMethodName)
-						.collect(Collectors.toSet());
+				final Set<String> failingTestCase =
+						result.getFailingTests()
+								.stream()
+								.map(failure -> failure.testCaseName)
+								.collect(Collectors.toSet());
 				currentTestList = currentTestList.stream()
 						.filter(ctMethod -> !failingTestCase.contains(ctMethod.getSimpleName()))
 						.collect(Collectors.toList());
@@ -176,12 +179,6 @@ public class Amplification {
 			amplifiedTests.addAll(testSelector.selectToKeep(currentTestList));
 		}
 		return amplifiedTests;
-	}
-
-	private void updateAmplifiedTestList(List<CtMethod<?>> ampTest, List<CtMethod<?>> amplification) {
-		ampTest.addAll(amplification);
-		ampTestCount += amplification.size();
-		LOGGER.info("total amp test: {}, global: {}", amplification.size(), ampTestCount);
 	}
 
 	/**
@@ -210,9 +207,9 @@ public class Amplification {
 			);
 			LOGGER.warn("Discarding following test cases for the amplification");
 
-			result.getFailingTests().stream()
-					.map(Failure::getDescription)
-					.map(Description::getMethodName)
+			result.getFailingTests()
+					.stream()
+					.map(failure -> failure.testCaseName)
 					.forEach(failure -> {
 						try {
 							CtMethod testToRemove = tests.stream()
@@ -249,15 +246,18 @@ public class Amplification {
 	 */
 	private List<CtMethod<?>> inputAmplifyTests(List<CtMethod<?>> tests) {
 		LOGGER.info("Amplification of inputs...");
-		List<CtMethod<?>> amplifiedTests = tests.stream()
+		List<CtMethod<?>> amplifiedTests = tests.parallelStream()
 				.flatMap(test -> {
 					DSpotUtils.printProgress(tests.indexOf(test), tests.size());
-					return inputAmplifyTest(test).stream();
-				})
-				.filter(test -> test != null && !test.getBody().getStatements().isEmpty())
-				.collect(Collectors.toList());
+					return inputAmplifyTest(test);
+				}).collect(Collectors.toList());
 		LOGGER.info("{} new tests generated", amplifiedTests.size());
 		return amplifiedTests;
+	}
+
+	public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+		Set<Object> seen = ConcurrentHashMap.newKeySet();
+		return t -> seen.add(keyExtractor.apply(t));
 	}
 
 	/**
@@ -268,18 +268,18 @@ public class Amplification {
 	 * @param test Test method
 	 * @return New generated tests
 	 */
-	private List<CtMethod<?>> inputAmplifyTest(CtMethod test) {
-		return amplifiers.stream()
+	private Stream<CtMethod<?>> inputAmplifyTest(CtMethod<?> test) {
+		final CtMethod topParent = AmplificationHelper.getTopParent(test);
+		return amplifiers.parallelStream()
 				.flatMap(amplifier -> {
 					List<CtMethod> amplifiedMethods = amplifier.apply(test);
 					Counter.updateInputOf(test, amplifiedMethods.size());
-					return amplifiedMethods.stream();
-				}).map(CtMethod::getBody)
-				.distinct()
-				.map(body -> body.getParent(CtMethod.class))
+					return amplifiedMethods.stream();})
+				.filter(amplifiedTest -> amplifiedTest != null && !amplifiedTest.getBody().getStatements().isEmpty())
+				.filter(distinctByKey(CtMethod::getBody))
 				.map(amplifiedTest ->
-						AmplificationHelper.addOriginInComment(amplifiedTest, AmplificationHelper.getTopParent(test))
-				).collect(Collectors.toList());
+						AmplificationHelper.addOriginInComment(amplifiedTest, topParent)
+				);
 	}
 
 	private void resetAmplifiers(CtType parentClass) {

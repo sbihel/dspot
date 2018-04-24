@@ -1,7 +1,7 @@
 package fr.inria.diversify.dspot.assertGenerator;
 
-import fr.inria.Utils;
 import fr.inria.AbstractTest;
+import fr.inria.Utils;
 import fr.inria.diversify.dspot.amplifier.StatementAdd;
 import fr.inria.diversify.utils.AmplificationHelper;
 import fr.inria.diversify.utils.sosiefier.InputProgram;
@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -22,6 +24,93 @@ import static org.junit.Assert.assertEquals;
  * on 12/06/17
  */
 public class AssertGeneratorHelperTest extends AbstractTest {
+
+    @Test
+    public void testAddAfterClassMethod() throws Exception {
+
+        /*
+            test the method addAfterClassMethod
+                1 - it generates the whole method, since it does not exist
+                2 - it adds at the end of the existing method an invocation to save() of ObjectLog
+         */
+
+        final CtClass<?> testClass = Utils.findClass("fr.inria.sample.TestClassWithLoop");
+        assertFalse(testClass.getMethods()
+                .stream()
+                .anyMatch(method ->
+                        method.getAnnotations()
+                                .stream()
+                                .anyMatch(ctAnnotation ->
+                                        "org.junit.AfterClass".equals(ctAnnotation.getAnnotationType().getQualifiedName())
+                                )
+                ));
+
+        AssertGeneratorHelper.addAfterClassMethod(testClass);
+        final CtMethod<?> afterClassMethod = testClass.getMethods()
+                .stream()
+                .filter(method ->
+                        method.getAnnotations()
+                                .stream()
+                                .anyMatch(ctAnnotation ->
+                                        "org.junit.AfterClass".equals(ctAnnotation.getAnnotationType().getQualifiedName())
+                                )
+                ).findFirst()
+                .orElseThrow(() -> new AssertionError("Should have a value of a method with the org.junit.AfterClass annotation"));
+
+        afterClassMethod.getBody().removeStatement(afterClassMethod .getBody().getLastStatement());
+        assertTrue(afterClassMethod.getBody()
+                .getStatements()
+                .stream()
+                .noneMatch(statement ->
+                        statement.toString().endsWith("ObjectLog.save()")
+                )
+        );
+        AssertGeneratorHelper.addAfterClassMethod(testClass);
+        assertTrue(afterClassMethod.getBody()
+                .getStatements()
+                .stream()
+                .anyMatch(statement ->
+                        statement.toString().endsWith("ObjectLog.save()")
+                )
+        );
+    }
+
+    @Test
+    public void testOnLoops() throws Exception {
+
+        /*
+            Test the instrumentation on values used in loops
+            For now, we do not log such values
+            TODO implements the A-amplification on values inside loops
+         */
+        assertEquals("@org.junit.Test(timeout = 10000)" + AmplificationHelper.LINE_SEPARATOR+
+                        "public void test2_withlog() throws java.lang.Exception {" + AmplificationHelper.LINE_SEPARATOR+
+                        "    java.util.List<fr.inria.sample.TestClassWithLoop.MyClass> list = new java.util.ArrayList<>();" + AmplificationHelper.LINE_SEPARATOR+
+                        "    boolean o_test2__3 = list.add(new fr.inria.sample.TestClassWithLoop.MyClass());" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__3, \"o_test2__3\", \"test2__3\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "    boolean o_test2__5 = list.add(new fr.inria.sample.TestClassWithLoop.MyClass());" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__5, \"o_test2__5\", \"test2__5\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "    boolean o_test2__7 = list.add(new fr.inria.sample.TestClassWithLoop.MyClass());" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__7, \"o_test2__7\", \"test2__7\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "    for (fr.inria.sample.TestClassWithLoop.MyClass myClass : list) {" + AmplificationHelper.LINE_SEPARATOR+
+                        "        myClass.getInteger();" + AmplificationHelper.LINE_SEPARATOR+
+                        "    }" + AmplificationHelper.LINE_SEPARATOR+
+                        "    for (fr.inria.sample.TestClassWithLoop.MyClass myClass : list) {" + AmplificationHelper.LINE_SEPARATOR+
+                        "        myClass.inc();" + AmplificationHelper.LINE_SEPARATOR+
+                        "    }" + AmplificationHelper.LINE_SEPARATOR+
+                        "    for (fr.inria.sample.TestClassWithLoop.MyClass myClass : list) {" + AmplificationHelper.LINE_SEPARATOR+
+                        "        myClass.getInteger();" + AmplificationHelper.LINE_SEPARATOR+
+                        "    }" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__3, \"o_test2__3\", \"test2__3___end\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__5, \"o_test2__5\", \"test2__5___end\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "    fr.inria.diversify.compare.ObjectLog.log(o_test2__7, \"o_test2__7\", \"test2__7___end\");" + AmplificationHelper.LINE_SEPARATOR+
+                        "}",
+                AssertGeneratorHelper.createTestWithLog(
+                        new AssertionRemover().removeAssertion(Utils.findMethod("fr.inria.sample.TestClassWithLoop", "test2")),
+                        "fr.inria.sample"
+                ).toString()
+        );
+    }
 
     /**
      * this test aims at verifying that dspot does not generate assertion for generated object.

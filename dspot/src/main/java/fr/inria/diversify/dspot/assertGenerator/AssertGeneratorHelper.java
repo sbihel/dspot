@@ -2,12 +2,25 @@ package fr.inria.diversify.dspot.assertGenerator;
 
 import fr.inria.diversify.compare.ObjectLog;
 import fr.inria.diversify.utils.AmplificationHelper;
-import spoon.reflect.code.*;
+import spoon.reflect.code.CtAssignment;
+import spoon.reflect.code.CtBlock;
+import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtLocalVariable;
+import spoon.reflect.code.CtLoop;
+import spoon.reflect.code.CtStatement;
+import spoon.reflect.code.CtTypeAccess;
+import spoon.reflect.code.CtVariableAccess;
+import spoon.reflect.code.CtVariableWrite;
+import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtNamedElement;
+import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.CtTypedElement;
+import spoon.reflect.declaration.ModifierKind;
+import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtExecutableReference;
 import spoon.reflect.reference.CtTypeReference;
+import spoon.reflect.reference.CtWildcardReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.SpoonClassNotFoundException;
 
@@ -22,12 +35,15 @@ import java.util.function.Predicate;
 public class AssertGeneratorHelper {
 
     static boolean isVoidReturn(CtInvocation invocation) {
-        return (invocation.getType() != null && (invocation.getType().equals(invocation.getFactory().Type().voidType()) ||
-                invocation.getType().equals(invocation.getFactory().Type().voidPrimitiveType())));
+        return (invocation.getType() != null &&
+                (invocation.getType().equals(invocation.getFactory().Type().voidType()) ||
+                        invocation.getType().equals(invocation.getFactory().Type().voidPrimitiveType())) &&
+                !(invocation.getType() instanceof CtWildcardReference)
+        );
     }
 
     static CtMethod<?> createTestWithLog(CtMethod test, final String filter) {
-        CtMethod clone = AmplificationHelper.cloneMethodTest(test, "");
+        CtMethod clone = AmplificationHelper.cloneTestMethodNoAmp(test);
         clone.setSimpleName(test.getSimpleName() + "_withlog");
         final List<CtStatement> allStatement = clone.getElements(new TypeFilter<>(CtStatement.class));
         allStatement.stream()
@@ -37,6 +53,45 @@ public class AssertGeneratorHelper {
                                 test.getSimpleName() + "__" + indexOfByRef(allStatement, statement))
                 );
         return clone;
+    }
+
+    static void addAfterClassMethod(CtType<?> testClass) {
+        // get AfterClassMethod is exist otherwise use initAfterClassMethod
+        final Factory factory = testClass.getFactory();
+        final CtMethod<?> afterClassMethod = testClass.getMethods()
+                .stream()
+                .filter(method ->
+                        method.getAnnotations()
+                                .stream()
+                                .anyMatch(ctAnnotation ->
+                                        "org.junit.AfterClass".equals(ctAnnotation.getAnnotationType().getQualifiedName())
+                                )
+                ).findFirst()
+                .orElse(initAfterClassMethod(factory));
+        final CtTypeReference<?> ctTypeReference = factory.createCtTypeReference(ObjectLog.class);
+        final CtExecutableReference<?> reference = ctTypeReference
+                .getTypeDeclaration()
+                .getMethodsByName("save")
+                .get(0)
+                .getReference();
+        afterClassMethod.getBody().insertEnd(
+                factory.createInvocation(factory.createTypeAccess(ctTypeReference),
+                        reference)
+        );
+        testClass.addMethod(afterClassMethod);
+    }
+
+    private static CtMethod<Void> initAfterClassMethod(Factory factory) {
+        final CtMethod<Void> afterClassMethod = factory.createMethod();
+        afterClassMethod.setType(factory.Type().VOID_PRIMITIVE);
+        afterClassMethod.addModifier(ModifierKind.PUBLIC);
+        afterClassMethod.addModifier(ModifierKind.STATIC);
+        afterClassMethod.setSimpleName("afterClass");
+        final CtAnnotation annotation = factory.createAnnotation();
+        annotation.setAnnotationType(factory.Annotation().create("org.junit.AfterClass").getReference());
+        afterClassMethod.addAnnotation(annotation);
+        afterClassMethod.setBody(factory.createBlock());
+        return afterClassMethod;
     }
 
     private static int indexOfByRef(List<CtStatement> statements, CtStatement statement) {
@@ -60,6 +115,12 @@ public class AssertGeneratorHelper {
         if (!(statement.getParent() instanceof CtBlock)) {
             return false;
         }
+
+        // contract: for now, we do not log values inside loop
+        if (statement.getParent(CtLoop.class) != null) {
+            return false;
+        }
+
         if (statement instanceof CtInvocation) {
             CtInvocation invocation = (CtInvocation) statement;
             //type tested by the test class
@@ -82,7 +143,7 @@ public class AssertGeneratorHelper {
                 statement instanceof CtVariableWrite) {
 
             if (statement instanceof CtNamedElement) {
-                if (((CtNamedElement)statement).getSimpleName()
+                if (((CtNamedElement) statement).getSimpleName()
                         .startsWith("__DSPOT_")) {
                     return false;
                 }
@@ -107,7 +168,7 @@ public class AssertGeneratorHelper {
         return block.getStatements().size() +
                 block.getStatements().stream()
                         .filter(statement -> statement instanceof CtBlock)
-                        .mapToInt(childBlock -> AssertGeneratorHelper.getSize((CtBlock<?>)childBlock ))
+                        .mapToInt(childBlock -> AssertGeneratorHelper.getSize((CtBlock<?>) childBlock))
                         .sum();
     }
 
@@ -180,7 +241,7 @@ public class AssertGeneratorHelper {
         }
 
         // if between the two log statements there is only log statement, we do not add the log end statement
-        if(shouldAddLogEndStatement.test(invocationToObjectLog) &&
+        if (shouldAddLogEndStatement.test(invocationToObjectLog) &&
                 getSize(stmt.getParent(CtMethod.class).getBody()) + 1 < 65535) {
             stmt.getParent(CtBlock.class).insertEnd(invocationToObjectLogAtTheEnd);
         }
@@ -188,9 +249,9 @@ public class AssertGeneratorHelper {
 
     private static final Predicate<CtStatement> shouldAddLogEndStatement = statement -> {
         final List<CtStatement> statements = statement.getParent(CtBlock.class).getStatements();
-        for (int i = statements.indexOf(statement) + 1 ; i < statements.size() ; i++) {
-            if (! (statements.get(i) instanceof CtInvocation) ||
-                    !((CtInvocation)statements.get(i)).getTarget().equals(statement.getFactory().createTypeAccess(
+        for (int i = statements.indexOf(statement) + 1; i < statements.size(); i++) {
+            if (!(statements.get(i) instanceof CtInvocation) ||
+                    !((CtInvocation) statements.get(i)).getTarget().equals(statement.getFactory().createTypeAccess(
                             statement.getFactory().Type().createReference(ObjectLog.class)))) {
                 return true;
             }

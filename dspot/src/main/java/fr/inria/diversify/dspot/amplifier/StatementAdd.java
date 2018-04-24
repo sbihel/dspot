@@ -11,6 +11,7 @@ import spoon.reflect.declaration.*;
 import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtLocalVariableReference;
 import spoon.reflect.reference.CtTypeReference;
+import spoon.reflect.reference.CtWildcardReference;
 import spoon.reflect.visitor.Query;
 import spoon.reflect.visitor.filter.TypeFilter;
 
@@ -63,12 +64,14 @@ public class StatementAdd implements Amplifier {
     }
 
     private List<CtMethod> useReturnValuesOfExistingMethodCall(CtMethod method) {
-        List<CtInvocation> invocations = getInvocation(method);
+        List<CtInvocation> invocations = getInvocations(method);
         final List<CtMethod> ampMethods = new ArrayList<>();
         invocations.stream()
-                .filter(invocation -> !TypeUtils.isPrimitive(invocation.getType()) ||
-                        !TypeUtils.isString(invocation.getType()))
-                .forEach(invocation -> {
+                .filter(invocation ->
+                        !(invocation.getType() instanceof CtWildcardReference) &&
+                        !TypeUtils.isPrimitive(invocation.getType()) &&
+                        !TypeUtils.isString(invocation.getType())
+                ).forEach(invocation -> {
                     List<CtMethod<?>> methodsWithTargetType = findMethodsWithTargetType(invocation.getType());
                     if (!methodsWithTargetType.isEmpty()) {
                         int indexOfInvocation = getIndexOf(method, invocation);
@@ -77,7 +80,7 @@ public class StatementAdd implements Amplifier {
                                 "__DSPOT_invoc_" + indexOfInvocation,
                                 invocation.clone());
                         CtExpression<?> target = createLocalVarRef(localVar);
-                        CtMethod methodClone = AmplificationHelper.cloneMethodTest(method, "");
+                        CtMethod methodClone = AmplificationHelper.cloneTestMethodForAmp(method, "");
                         replaceInvocationByLocalVariable(
                                 methodClone.getElements(new TypeFilter<>(CtStatement.class)).get(indexOfInvocation),
                                 localVar
@@ -136,14 +139,20 @@ public class StatementAdd implements Amplifier {
 
     private CtMethod addInvocation(CtMethod<?> testMethod, CtMethod<?> methodToInvokeToAdd, CtExpression<?> target, CtStatement position) {
         final Factory factory = testMethod.getFactory();
-        CtMethod methodClone = AmplificationHelper.cloneMethodTest(testMethod, "_sd");
+        CtMethod methodClone = AmplificationHelper.cloneTestMethodForAmp(testMethod, "_sd");
 
-        CtBlock body = methodClone.getElements(new TypeFilter<>(CtStatement.class))
+        CtBodyHolder parent = methodClone.getElements(new TypeFilter<>(CtStatement.class))
                 .stream()
                 .filter(statement -> statement.equals(position))
                 .findFirst()
                 .get()
-                .getParent(CtBlock.class);
+                .getParent(CtBodyHolder.class);
+
+        if (!(parent.getBody() instanceof CtBlock)) {
+            parent.setBody(factory.createCtBlock(parent.getBody()));
+        }
+
+        CtBlock body = (CtBlock) parent.getBody();
 
         List<CtParameter<?>> parameters = methodToInvokeToAdd.getParameters();
         List<CtExpression<?>> arguments = new ArrayList<>(parameters.size());
@@ -197,7 +206,8 @@ public class StatementAdd implements Amplifier {
 
 
 
-    private List<CtInvocation> getInvocation(CtMethod method) {
+    // return all invocations inside the given method
+    private List<CtInvocation> getInvocations(CtMethod method) {
         List<CtInvocation> statements = Query.getElements(method, new TypeFilter(CtInvocation.class));
         return statements.stream()
                 .filter(invocation -> invocation.getParent() instanceof CtBlock)

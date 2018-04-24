@@ -1,6 +1,7 @@
 package fr.inria.stamp;
 
 import com.martiansoftware.jsap.*;
+import eu.stamp.project.testrunner.EntryPoint;
 import fr.inria.diversify.dspot.amplifier.*;
 import fr.inria.diversify.dspot.selector.ChangeDetectorSelector;
 import fr.inria.diversify.dspot.selector.JacocoCoverageSelector;
@@ -9,8 +10,9 @@ import fr.inria.diversify.dspot.selector.PitMutantScoreSelector;
 import fr.inria.diversify.dspot.selector.ExecutedMutantSelector;
 import fr.inria.diversify.dspot.selector.TakeAllSelector;
 import fr.inria.diversify.dspot.selector.TestSelector;
+import fr.inria.diversify.utils.AmplificationHelper;
 import fr.inria.diversify.utils.DSpotUtils;
-import fr.inria.stamp.test.runner.TestRunnerFactory;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +83,7 @@ public class JSAPOptions {
         BooleanLiteralAmplifier(new BooleanLiteralAmplifier()),
         CharLiteralAmplifier(new CharLiteralAmplifier()),
         AllLiteralAmplifiers(new AllLiteralAmplifiers()),
+        ReplacementAmplifier(new ReplacementAmplifier()),
         None(null);
         public final Amplifier amplifier;
 
@@ -92,6 +95,7 @@ public class JSAPOptions {
     public static Configuration parse(String[] args) {
         JSAPResult jsapConfig = options.parse(args);
         Main.verbose = jsapConfig.getBoolean("verbose");
+        EntryPoint.verbose = Main.verbose;
         if (!jsapConfig.success() || jsapConfig.getBoolean("help")) {
             System.err.println();
             for (Iterator<?> errs = jsapConfig.getErrorMessageIterator(); errs.hasNext(); ) {
@@ -120,7 +124,6 @@ public class JSAPOptions {
 
         PitMutantScoreSelector.descartesMode = jsapConfig.getBoolean("descartes");
 
-        TestRunnerFactory.useReflectiveTestRunner = false;
         DSpotUtils.withComment = jsapConfig.getBoolean("comment");
 
         return new Configuration(jsapConfig.getString("path"),
@@ -136,7 +139,7 @@ public class JSAPOptions {
                 jsapConfig.getString("mavenHome"),
                 jsapConfig.getInt("maxTestAmplified"),
                 jsapConfig.getBoolean("clean"),
-                jsapConfig.getBoolean("minimize")
+                !jsapConfig.getBoolean("no-minimize")
         );
     }
 
@@ -145,10 +148,28 @@ public class JSAPOptions {
             return AmplifierEnum.valueOf(amplifier).amplifier;
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Wrong values for amplifiers: {} is not recognized", amplifier);
-            LOGGER.warn("Possible values are: StringLiteralAmplifier | NumberLiteralAmplifier | CharLiteralAmplifier | BooleanLiteralAmplifier | AllLiteralAmplifiers | MethodAdd | MethodRemove | TestDataMutator | StatementAdd | None");
+            LOGGER.warn("Possible values are: {}", getPossibleValuesForInputAmplifier());
             LOGGER.warn("No amplifier has been added for {}", amplifier);
             return null;
         }
+    }
+
+    @NotNull
+    private static String getPossibleValuesForInputAmplifier() {
+        return AmplificationHelper.LINE_SEPARATOR + "\t\t - " +
+        Arrays.stream(new String[] {
+                "StringLiteralAmplifier",
+                "NumberLiteralAmplifier",
+                "CharLiteralAmplifier",
+                "BooleanLiteralAmplifier",
+                "AllLiteralAmplifiers",
+                "MethodAdd",
+                "MethodRemove",
+                "TestDataMutator (deprecated)",
+                "StatementAdd",
+                "ReplacementAmplifier",
+                "None"
+        }).collect(Collectors.joining(AmplificationHelper.LINE_SEPARATOR + "\t\t - "));
     }
 
     public static List<Amplifier> buildAmplifiersFromString(String[] amplifiersAsString) {
@@ -199,7 +220,7 @@ public class JSAPOptions {
         amplifiers.setStringParser(JSAP.STRING_PARSER);
         amplifiers.setUsageName("Amplifier");
         amplifiers.setDefault("None");
-        amplifiers.setHelp("[optional] specify the list of amplifiers to use. Default with all available amplifiers. Possible values: StringLiteralAmplifier | NumberLiteralAmplifier | CharLiteralAmplifier | BooleanLiteralAmplifier | AllLiteralAmplifiers | MethodAdd | MethodRemove | TestDataMutator | StatementAdd | None");
+        amplifiers.setHelp("[optional] specify the list of amplifiers to use. Default with all available amplifiers. " + getPossibleValuesForInputAmplifier());
 
         FlaggedOption iteration = new FlaggedOption("iteration");
         iteration.setDefault("3");
@@ -304,10 +325,10 @@ public class JSAPOptions {
         descartes.setDefault("false");
         descartes.setHelp("Enable the descartes engine for Pit Mutant Score Selector.");
 
-        Switch minimize = new Switch("minimize");
-        minimize.setLongFlag("minimize");
-        minimize.setDefault("true");
-        minimize.setHelp("Enable the minimization of amplified tests.");
+        Switch nominimize = new Switch("no-minimize");
+        nominimize.setLongFlag("no-minimize");
+        nominimize.setDefault("false");
+        nominimize.setHelp("Disable the minimization of amplified tests.");
 
         try {
             jsap.registerParameter(pathToConfigFile);
@@ -327,7 +348,7 @@ public class JSAPOptions {
             jsap.registerParameter(timeOut);
             jsap.registerParameter(verbose);
             jsap.registerParameter(withComment);
-            jsap.registerParameter(minimize);
+            jsap.registerParameter(nominimize);
             jsap.registerParameter(example);
             jsap.registerParameter(help);
         } catch (JSAPException e) {

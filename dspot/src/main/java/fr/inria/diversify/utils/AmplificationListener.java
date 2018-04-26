@@ -14,11 +14,22 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Listener for changes (i.e. amplifications) applied.
+ */
 public class AmplificationListener extends ActionBasedChangeListenerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(AmplificationListener.class);
 
+    /**
+     * Maps modified ast nodes (in the form of triplet parent+role+value) to the amplification applied.
+     */
     private static final ConcurrentMap<ActionLog, AmplificationCategory> AmplificationLog = new ConcurrentHashMap<>();
 
+    /**
+     * Bundles keys for the amplification map.
+     *
+     * Similar to a tuple in its usage.
+     */
     private class ActionLog {
         private CtElement parent;
         private CtRole role;

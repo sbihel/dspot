@@ -1,17 +1,17 @@
 package fr.inria.diversify.utils;
 
+import com.google.common.collect.MapMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spoon.experimental.modelobs.ActionBasedChangeListenerImpl;
-import spoon.experimental.modelobs.action.Action;
 import spoon.experimental.modelobs.action.AddAction;
 import spoon.experimental.modelobs.action.DeleteAction;
 import spoon.experimental.modelobs.action.UpdateAction;
 import spoon.reflect.declaration.CtElement;
+import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.path.CtRole;
 
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -23,66 +23,92 @@ public class AmplificationListener extends ActionBasedChangeListenerImpl {
     /**
      * Maps modified ast nodes (in the form of triplet parent+role+value) to the amplification applied.
      */
-    private static final ConcurrentMap<ActionLog, AmplificationCategory> AmplificationLog = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<CtMethod<?>, ArrayList<ActionLog>> AmplificationLog = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
 
     /**
      * Bundles keys for the amplification map.
-     *
+     * <p>
      * Similar to a tuple in its usage.
      */
     private class ActionLog {
+        public CtElement getParent() {
+            return parent;
+        }
+
+        public CtRole getRole() {
+            return role;
+        }
+
+        public Object getOldValue() {
+            return oldValue;
+        }
+
+        public Object getNewValue() {
+            return newValue;
+        }
+
+        public AmplificationCategory getAmpCategory() {
+            return ampCategory;
+        }
+
         private CtElement parent;
         private CtRole role;
-        private Object value;
+        private Object oldValue;
+        private Object newValue;
+        private AmplificationCategory ampCategory;
 
-        public ActionLog(CtElement parent, CtRole role, Object value) {
+        private ActionLog(CtElement parent, CtRole role, Object oldValue, Object newValue, fr.inria.diversify.utils.AmplificationCategory ampCategory) {
             this.parent = parent;
             this.role = role;
-            this.value = value;
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+            this.ampCategory = ampCategory;
         }
+    }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ActionLog actionLog = (ActionLog) o;
-            return Objects.equals(parent, actionLog.parent) &&
-                    role == actionLog.role &&
-                    Objects.equals(value, actionLog.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(parent, role, value);
+    private void addAmpToLog(CtMethod testMethod, ActionLog newAction) {
+        if (AmplificationLog.containsKey(testMethod)) {
+            AmplificationLog.get(testMethod).add(newAction);
+        } else {
+            ArrayList<ActionLog> newAmpArray = new ArrayList<>();
+            newAmpArray.add(newAction);
+            AmplificationLog.put(testMethod, newAmpArray);
         }
     }
 
     @Override
     public void onAdd(AddAction action) {
         super.onAdd(action);
-        AmplificationLog.put(new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), action.getNewValue()), AmplificationCategory.ADD);
+        final ActionLog actionLog = new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), null, action.getNewValue(), AmplificationCategory.ADD);
+        CtElement parent = action.getContext().getElementWhereChangeHappens();
+        while (!(parent instanceof CtMethod))
+            parent = parent.getParent();
+        CtMethod testMethodRoot = (CtMethod) parent;
+        addAmpToLog(testMethodRoot, actionLog);
         LOGGER.info("ADD Amplification applied");
     }
 
     @Override
     public void onDelete(DeleteAction action) {
         super.onDelete(action);
-        AmplificationLog.put(new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), action.getRemovedValue()), AmplificationCategory.REMOVE);
+        final ActionLog actionLog = new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), action.getRemovedValue(), null, AmplificationCategory.REMOVE);
+        CtElement parent = action.getContext().getElementWhereChangeHappens();
+        while (!(parent instanceof CtMethod))
+            parent = parent.getParent();
+        CtMethod testMethodRoot = (CtMethod) parent;
+        addAmpToLog(testMethodRoot, actionLog);
         LOGGER.info("REMOVE Amplification applied");
     }
 
     @Override
     public void onUpdate(UpdateAction action) {
         super.onUpdate(action);
-        AmplificationLog.put(new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), action.getNewValue()), AmplificationCategory.MODIFY);
+        final ActionLog actionLog = new ActionLog(action.getContext().getElementWhereChangeHappens(), action.getContext().getChangedProperty(), action.getOldValue(), action.getNewValue(), AmplificationCategory.MODIFY);
+        CtElement parent = action.getContext().getElementWhereChangeHappens();
+        while (!(parent instanceof CtMethod))
+            parent = parent.getParent();
+        CtMethod testMethodRoot = (CtMethod) parent;
+        addAmpToLog(testMethodRoot, actionLog);
         LOGGER.info("MODIFY Amplification applied");
-    }
-
-    public boolean isAmplification(CtElement parent, CtRole role, Object value) {
-        return AmplificationLog.containsKey(new ActionLog(parent, role, value));
-    }
-
-    public AmplificationCategory getAmplificationCategory(CtElement parent, CtRole role, Object value) {
-        return AmplificationLog.get(new ActionLog(parent, role, value));
     }
 }

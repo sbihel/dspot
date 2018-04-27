@@ -1,5 +1,6 @@
 package fr.inria.diversify.dspot.selector;
 
+import fr.inria.diversify.utils.AmplificationListener;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.diversify.utils.sosiefier.InputProgram;
 import fr.inria.stamp.minimization.GeneralMinimizer;
@@ -51,7 +52,7 @@ public class TakeAllSelector implements TestSelector {
 	}
 
 	@Override
-	public void report() {
+	public void report(AmplificationListener amplificationListener) {
 		System.out.println("Amplification results with " + this.selectedAmplifiedTest.size() + " new tests.");
 		reset();
 	}

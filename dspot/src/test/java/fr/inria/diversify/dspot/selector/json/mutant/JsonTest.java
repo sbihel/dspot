@@ -24,7 +24,8 @@ public class JsonTest {
 
         TestClassJSON classJSON = new TestClassJSON(23, "MyTestClass", 1);
         classJSON.addTestCase(new TestCaseJSON("myTestCase", 1, 1,
-                Collections.singletonList(new MutantJSON("IdMutant", 1, "method"))));
+                Collections.singletonList(new MutantJSON("IdMutant", 1, "method")),
+                ""));
         String actualJson = gson.toJson(classJSON);
 
         assertEquals(expectedJson, actualJson);

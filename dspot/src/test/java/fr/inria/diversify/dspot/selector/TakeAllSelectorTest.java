@@ -5,6 +5,7 @@ import fr.inria.diversify.dspot.DSpot;
 import fr.inria.diversify.dspot.amplifier.StatementAdd;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreator;
 import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.AmplificationListener;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.stamp.minimization.GeneralMinimizer;
 import org.apache.commons.io.FileUtils;
@@ -71,6 +72,6 @@ public class TakeAllSelectorTest extends AbstractSelectorTest {
 				)
 		);
 		assertFalse(this.testSelectorUnderTest.getAmplifiedTestCases().isEmpty());
-		this.testSelectorUnderTest.report();
+		this.testSelectorUnderTest.report((AmplificationListener) Utils.getFactory().getEnvironment().getModelChangeListener());
 	}
 }

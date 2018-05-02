@@ -30,7 +30,7 @@ public class AmplificationListener extends ActionBasedChangeListenerImpl {
      * <p>
      * Similar to a tuple in its usage.
      */
-    private class ActionLog {
+    public class ActionLog {
         public CtElement getParent() {
             return parent;
         }
@@ -110,5 +110,13 @@ public class AmplificationListener extends ActionBasedChangeListenerImpl {
         CtMethod testMethodRoot = (CtMethod) parent;
         addAmpToLog(testMethodRoot, actionLog);
         LOGGER.info("MODIFY Amplification applied");
+    }
+
+    public ArrayList<ActionLog> getAmplificationList(CtMethod<?> testMethod) {
+        return AmplificationLog.get(testMethod);
+    }
+
+    public boolean hasLog(CtMethod<?> testMethod) {
+        return AmplificationLog.containsKey(testMethod);
     }
 }

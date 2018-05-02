@@ -12,22 +12,85 @@ import java.util.List;
  */
 public class PitResult {
 
-    public enum State {SURVIVED, KILLED, NO_COVERAGE, TIMED_OUT, NON_VIABLE, MEMORY_ERROR}
+    /**
+     * Possible states of a mutant.
+     * <li>{@link #SURVIVED}</li>
+     * <li>{@link #KILLED}</li>
+     * <li>{@link #NO_COVERAGE}</li>
+     * <li>{@link #TIMED_OUT}</li>
+     * <li>{@link #NON_VIABLE}</li>
+     * <li>{@link #MEMORY_ERROR}</li>
+     */
+    public enum State {
+        /**
+         * The mutant is live, undetected by the test suite.
+         */
+        SURVIVED,
 
+        /**
+         * The mutant was detected by a failing test.
+         */
+        KILLED,
+
+        /**
+         * The mutation has not been executed by any test.
+         */
+        NO_COVERAGE,
+
+        /**
+         * The execution of a test timed out.
+         */
+        TIMED_OUT,
+
+        /**
+         * The mutation could not be loaded into the jvm.
+         */
+        NON_VIABLE,
+
+        /**
+         * The jvm ran out of memory while executing the test suite.
+         */
+        MEMORY_ERROR
+    }
+
+    /**
+     * Name of the class that contains the mutation.
+     */
     private final String fullQualifiedNameOfMutatedClass;
 
+    /**
+     * Name of the mutator applied.
+     */
     private final String fullQualifiedNameMutantOperator;
 
+    /**
+     * Name of the method that contains the mutation.
+     */
     private final String nameOfMutatedMethod;
 
+    /**
+     *  Line number where the mutation is.
+     */
     private final int lineNumber;
 
+    /**
+     * State of the mutant. See {@link State}.
+     */
     private final State stateOfMutant;
 
+    /**
+     * Path of the test method that killed the mutant.
+     */
     private final String fullQualifiedNameOfKiller;
 
+    /**
+     * Name of the test method that killed the mutant.
+     */
     private final String simpleNameMethod;
 
+    /**
+     * Root AST node of the test method that killed the mutant.
+     */
     private CtMethod testCase = null;
 
     public PitResult(String fullQualifiedNameOfMutatedClass, State stateOfMutant,

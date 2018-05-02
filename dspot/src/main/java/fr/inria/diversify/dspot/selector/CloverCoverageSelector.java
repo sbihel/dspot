@@ -1,7 +1,6 @@
 package fr.inria.diversify.dspot.selector;
 
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
-import fr.inria.diversify.utils.AmplificationListener;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
 import fr.inria.diversify.utils.AmplificationChecker;
 import fr.inria.diversify.utils.AmplificationHelper;
@@ -136,7 +135,7 @@ public class CloverCoverageSelector extends TakeAllSelector {
     }
 
     @Override
-    public void report(AmplificationListener amplificationListener) {
+    public void report() {
         final Coverage amplifiedCoverage = computeAmplifiedCoverage();
         final String nl = System.getProperty("line.separator");
 

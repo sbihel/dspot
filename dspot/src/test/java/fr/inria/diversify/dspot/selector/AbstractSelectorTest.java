@@ -3,7 +3,6 @@ package fr.inria.diversify.dspot.selector;
 import fr.inria.Utils;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreator;
 import fr.inria.diversify.utils.AmplificationHelper;
-import fr.inria.diversify.utils.AmplificationListener;
 import org.junit.Before;
 import org.junit.Test;
 import spoon.reflect.declaration.CtMethod;
@@ -71,7 +70,7 @@ public abstract class AbstractSelectorTest {
         );
         assertFalse(this.testSelectorUnderTest.getAmplifiedTestCases().isEmpty());
 
-        this.testSelectorUnderTest.report((AmplificationListener) Utils.getFactory().getEnvironment().getModelChangeListener());
+        this.testSelectorUnderTest.report();
         try (BufferedReader buffer = new BufferedReader(new FileReader(getPathToReportFile()))) {
             assertEquals(getContentReportFile(),
                     buffer.lines()

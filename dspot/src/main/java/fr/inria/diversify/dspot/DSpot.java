@@ -188,7 +188,7 @@ public class DSpot {
             final CtType clone = test.clone();
             test.getPackage().addType(clone);
             CtType<?> amplification = AmplificationHelper.createAmplifiedTest(testSelector.getAmplifiedTestCases(), clone, testSelector.getMinimizer());
-            testSelector.report((AmplificationListener) this.compiler.getFactory().getEnvironment().getModelChangeListener());
+            testSelector.report();
             final File outputDirectory = new File(inputConfiguration.getOutputDirectory());
             LOGGER.info("Print {} with {} amplified test cases in {}", amplification.getSimpleName(),
                     testSelector.getAmplifiedTestCases().size(), this.inputConfiguration.getOutputDirectory());

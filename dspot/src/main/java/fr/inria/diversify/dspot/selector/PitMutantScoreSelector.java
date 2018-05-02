@@ -4,13 +4,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilder;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
-import fr.inria.diversify.utils.*;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
+import fr.inria.diversify.utils.AmplificationChecker;
+import fr.inria.diversify.utils.AmplificationHelper;
 import fr.inria.diversify.dspot.selector.json.mutant.MutantJSON;
 import fr.inria.diversify.dspot.selector.json.mutant.TestCaseJSON;
 import fr.inria.diversify.dspot.selector.json.mutant.TestClassJSON;
+import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.mutant.pit.PitResult;
 import fr.inria.diversify.mutant.pit.PitResultParser;
+import fr.inria.diversify.utils.DSpotUtils;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.stamp.minimization.Minimizer;
 import fr.inria.stamp.minimization.PitMutantMinimizer;
@@ -176,9 +179,9 @@ public class PitMutantScoreSelector extends TakeAllSelector {
     }
 
     @Override
-    public void report(AmplificationListener amplificationListener) {
+    public void report() {
         reportStdout();
-        reportJSONMutants(amplificationListener);
+        reportJSONMutants();
         //clean up for the next class
         this.currentClassTestToBeAmplified = null;
     }
@@ -218,7 +221,7 @@ public class PitMutantScoreSelector extends TakeAllSelector {
                 .count();
     }
 
-    private void reportJSONMutants(AmplificationListener amplificationListener) {
+    private void reportJSONMutants() {
         if (this.currentClassTestToBeAmplified == null) {
             return;
         }
@@ -254,16 +257,14 @@ public class PitMutantScoreSelector extends TakeAllSelector {
                                 this.currentClassTestToBeAmplified.getSimpleName(),
                                 Counter.getAllAssertions(),
                                 Counter.getAllInput(),
-                                mutantsJson,
-                                AmplificationReport.generateAmplificationReport(amplifiedTest, amplificationListener)
+                                mutantsJson
                         ));
                     } else {
                         testClassJSON.addTestCase(new TestCaseJSON(
                                 amplifiedTest.getSimpleName(),
                                 Counter.getAssertionOfSinceOrigin(amplifiedTest),
                                 Counter.getInputOfSinceOrigin(amplifiedTest),
-                                mutantsJson,
-                                AmplificationReport.generateAmplificationReport(amplifiedTest, amplificationListener)
+                                mutantsJson
                         ));
                     }
                 }

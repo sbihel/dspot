@@ -1,6 +1,5 @@
 package fr.inria.diversify.dspot.selector;
 
-import fr.inria.diversify.utils.AmplificationListener;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.stamp.minimization.Minimizer;
 import spoon.reflect.declaration.CtMethod;
@@ -20,7 +19,7 @@ public interface TestSelector {
 
     List<CtMethod<?>> selectToKeep(List<CtMethod<?>> amplifiedTestToBeKept);
 
-    void report(AmplificationListener amplificationListener);
+    void report();
 
     List<CtMethod<?>> getAmplifiedTestCases();
 

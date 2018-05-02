@@ -4,7 +4,10 @@ import eu.stamp.project.testrunner.EntryPoint;
 import eu.stamp.project.testrunner.runner.test.Failure;
 import eu.stamp.project.testrunner.runner.test.TestListener;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
-import fr.inria.diversify.utils.*;
+import fr.inria.diversify.utils.AmplificationChecker;
+import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.DSpotUtils;
+import fr.inria.diversify.utils.Initializer;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
 import fr.inria.diversify.utils.sosiefier.InputConfiguration;
 import fr.inria.diversify.utils.sosiefier.InputProgram;
@@ -154,7 +157,7 @@ public class ChangeDetectorSelector implements TestSelector {
     }
 
     @Override
-    public void report(AmplificationListener amplificationListener) {
+    public void report() {
         final String output = "======= REPORT =======" + AmplificationHelper.LINE_SEPARATOR +
                 this.failurePerAmplifiedTest.size() + " amplified test fails on the new versions." +
                 AmplificationHelper.LINE_SEPARATOR +

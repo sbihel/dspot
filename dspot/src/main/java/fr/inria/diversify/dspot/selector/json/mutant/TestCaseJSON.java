@@ -15,7 +15,7 @@ public class TestCaseJSON {
     private final int nbMutantKilled;
     private final List<MutantJSON> mutantsKilled;
 
-    public TestCaseJSON(String name, int nbAssertionAdded, int nbInputAdded, List<MutantJSON> mutantsKilled, String amplificationReport) {
+    public TestCaseJSON(String name, int nbAssertionAdded, int nbInputAdded, List<MutantJSON> mutantsKilled) {
         this.name = name;
         this.nbAssertionAdded = nbAssertionAdded;
         this.nbInputAdded = nbInputAdded;

@@ -8,7 +8,6 @@ import eu.stamp.project.testrunner.runner.coverage.CoveragePerTestMethod;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
 import fr.inria.diversify.dspot.selector.json.coverage.TestCaseJSON;
 import fr.inria.diversify.dspot.selector.json.coverage.TestClassJSON;
-import fr.inria.diversify.utils.AmplificationListener;
 import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
 import fr.inria.diversify.utils.AmplificationHelper;
@@ -162,7 +161,7 @@ public class JacocoCoverageSelector extends TakeAllSelector {
     }
 
     @Override
-    public void report(AmplificationListener amplificationListener) {
+    public void report() {
         final String nl = System.getProperty("line.separator");
         StringBuilder report = new StringBuilder();
         report.append(nl).append("======= REPORT =======").append(nl);

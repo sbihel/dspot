@@ -11,15 +11,28 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentMap;
 
 public class AmplificationLog {
+    private static AmplificationLog _instance;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AmplificationLog.class);
 
-    public ConcurrentMap<CtMethod, ArrayList<ActionLog>> amplificationLog = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
+    private ConcurrentMap<CtMethod, ArrayList<ActionLog>> amplificationLog;
+
+    private AmplificationLog() {
+        this.amplificationLog = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
+    }
+
+    private static AmplificationLog getInstance() {
+        if (_instance == null) {
+            _instance = new AmplificationLog();
+        }
+        return _instance;
+    }
 
     public enum AmplificationCategory {
         ADD, REMOVE, MODIFY
     }
 
-    public class ActionLog {
+    public static class ActionLog {
         public String parent;
         public int parentLine;
         public String role;
@@ -37,29 +50,29 @@ public class AmplificationLog {
         }
     }
 
-    public void reset() {
-        this.amplificationLog.clear();
+    public static void reset() {
+        _instance = null;
     }
 
-    private void addAmplification(CtMethod amplifiedTest, ActionLog actionLog) {
-        if (amplificationLog.containsKey(amplifiedTest)) {
-            amplificationLog.get(amplifiedTest).add(actionLog);
+    private static void addAmplification(CtMethod amplifiedTest, ActionLog actionLog) {
+        if (getInstance().amplificationLog.containsKey(amplifiedTest)) {
+            getInstance().amplificationLog.get(amplifiedTest).add(actionLog);
         } else {
             ArrayList<ActionLog> newAmpArray = new ArrayList<>();
             newAmpArray.add(actionLog);
-            amplificationLog.put(amplifiedTest, newAmpArray);
+            getInstance().amplificationLog.put(amplifiedTest, newAmpArray);
         }
     }
 
-    public void logModifyAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object oldValue, Object newValue) {
+    public static void logModifyAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object oldValue, Object newValue) {
         addAmplification(amplifiedTest, new ActionLog(parent, role, oldValue, newValue, AmplificationCategory.MODIFY));
     }
 
-    public void logAddAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object newValue) {
+    public static void logAddAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object newValue) {
         addAmplification(amplifiedTest, new ActionLog(parent, role, "", newValue, AmplificationCategory.ADD));
     }
 
-    public void logRemoveAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object oldValue) {
+    public static void logRemoveAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object oldValue) {
         addAmplification(amplifiedTest, new ActionLog(parent, role, oldValue, "", AmplificationCategory.REMOVE));
     }
 }

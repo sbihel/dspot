@@ -2,6 +2,7 @@ package fr.inria.diversify.dspot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonWriter;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilder;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
 import fr.inria.diversify.dspot.amplifier.*;
@@ -21,10 +22,7 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.ModifierKind;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -102,7 +100,6 @@ public class DSpot {
         this.numberOfIterations = numberOfIterations;
         this.testSelector = testSelector;
         this.testSelector.init(this.inputConfiguration);
-        this.compiler.getFactory().getEnvironment().setModelChangeListener(new AmplificationListener());
 
         final String[] splittedPath = inputProgram.getProgramDir().split("/");
         final File projectJsonFile = new File(this.inputConfiguration.getOutputDirectory() +
@@ -175,6 +172,7 @@ public class DSpot {
     }
 
     public CtType amplifyTest(CtType test, List<CtMethod<?>> methods) {
+        this.compiler.getFactory().getEnvironment().setModelChangeListener(new AmplificationListener());
         try {
             test = AmplificationHelper.convertToJUnit4(test, this.inputConfiguration, this.inputProgram);
             Counter.reset();
@@ -189,6 +187,33 @@ public class DSpot {
             test.getPackage().addType(clone);
             CtType<?> amplification = AmplificationHelper.createAmplifiedTest(testSelector.getAmplifiedTestCases(), clone, testSelector.getMinimizer());
             testSelector.report();
+
+            AmplificationListener listener = (AmplificationListener) this.compiler.getFactory().getEnvironment().getModelChangeListener();
+            // clean the amplification log
+//            ArrayList<String> amplifiedTestNames = new ArrayList<>();
+//            for (CtMethod amplifiedTest: amplification.getAllMethods())
+//                amplifiedTestNames.add(amplifiedTest.getSimpleName());
+//            for (String key: listener.amplificationLog.keySet()) {
+//                LOGGER.info(">>> " + key);
+//                if (!amplifiedTestNames.contains(key))
+//                    listener.amplificationLog.remove(key);
+//            }
+//            for (String key: amplifiedTestNames)
+//                LOGGER.info("AMP>> " + key);
+            // export to json
+            Gson gson = new GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create();
+            final File fileAmpLog = new File(this.inputConfiguration.getOutputDirectory() + "/" +
+                    test.getQualifiedName() + "_amp_log.json");
+            HashMap<String, ArrayList<AmplificationListener.ActionLog>> newMap = new HashMap<>();
+            listener.amplificationLog.keySet()//.stream()
+//                    .filter(AmplificationChecker::isTest)
+                    .forEach(methodKey -> newMap.put(methodKey.getSimpleName(), listener.amplificationLog.get(methodKey)));
+            try (FileWriter writer = new FileWriter(fileAmpLog, false)) {
+                writer.write(gson.toJson(newMap));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             final File outputDirectory = new File(inputConfiguration.getOutputDirectory());
             LOGGER.info("Print {} with {} amplified test cases in {}", amplification.getSimpleName(),
                     testSelector.getAmplifiedTestCases().size(), this.inputConfiguration.getOutputDirectory());

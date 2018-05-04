@@ -2,6 +2,7 @@ package fr.inria.diversify.dspot.amplifier;
 
 import fr.inria.diversify.utils.AmplificationChecker;
 import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.AmplificationLog;
 import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtInvocation;
@@ -86,6 +87,7 @@ public abstract class AbstractLiteralAmplifier<T> implements Amplifier {
                                     literal.setValue(newValue);
                                     CtMethod clone = AmplificationHelper.cloneTestMethodForAmp(testMethod, getSuffix());
                                     literal.setValue(originalValue);
+                            AmplificationLog.logModifyAmplification(clone, literal.getParent(), literal.getRoleInParent(), originalValue, newValue);
                                     return clone;
                                 })
                 ).collect(Collectors.toList());

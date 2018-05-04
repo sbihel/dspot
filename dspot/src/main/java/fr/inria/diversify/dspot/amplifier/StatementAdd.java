@@ -4,6 +4,7 @@ package fr.inria.diversify.dspot.amplifier;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreator;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreatorHelper;
 import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.AmplificationLog;
 import fr.inria.diversify.utils.DSpotUtils;
 import fr.inria.diversify.utils.TypeUtils;
 import spoon.reflect.code.*;
@@ -81,10 +82,12 @@ public class StatementAdd implements Amplifier {
                                 invocation.clone());
                         CtExpression<?> target = createLocalVarRef(localVar);
                         CtMethod methodClone = AmplificationHelper.cloneTestMethodForAmp(method, "");
+                        CtStatement invocationToBeReplaced = methodClone.getElements(new TypeFilter<>(CtStatement.class)).get(indexOfInvocation);
                         replaceInvocationByLocalVariable(
-                                methodClone.getElements(new TypeFilter<>(CtStatement.class)).get(indexOfInvocation),
+                                invocationToBeReplaced,
                                 localVar
                         );
+                        AmplificationLog.logAddAmplification(methodClone, invocationToBeReplaced.getParent(), invocationToBeReplaced.getRoleInParent(), invocationToBeReplaced);
                         DSpotUtils.addComment(localVar, "StatementAdd: generate variable from return value", CtComment.CommentType.INLINE);
                         ampMethods.addAll(methodsWithTargetType.stream()
                                 .map(addMth -> addInvocation(methodClone, addMth, target, localVar))

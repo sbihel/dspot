@@ -4,6 +4,7 @@ import eu.stamp.project.testrunner.runner.test.TestListener;
 import fr.inria.diversify.compare.ObjectLog;
 import fr.inria.diversify.compare.Observation;
 import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.AmplificationLog;
 import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.utils.DSpotUtils;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
@@ -245,6 +246,7 @@ public class MethodsAssertGenerator {
                             addAtCorrectPlace(id, localVariable, assertStatement, statementToBeAsserted);
                             statements.remove(line);
                             statements.add(line, localVariable);
+                            AmplificationLog.logAssertAmplification(testWithAssert, localVariable.getParent(), localVariable.getRoleInParent(), localVariable);
                         } else {
                             addAtCorrectPlace(id, lastStmt, assertStatement, statementToBeAsserted);
                         }
@@ -319,6 +321,7 @@ public class MethodsAssertGenerator {
         cloneMethodTest.setBody(body);
         cloneMethodTest.setSimpleName(cloneMethodTest.getSimpleName() + "_failAssert" + (numberOfFail++));
         Counter.updateAssertionOf(cloneMethodTest, 1);
+        AmplificationLog.logAssertAmplification(cloneMethodTest, tryBlock.getParent(), tryBlock.getRoleInParent(), tryBlock);
 
         return cloneMethodTest;
     }

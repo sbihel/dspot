@@ -3,6 +3,7 @@ package fr.inria.diversify.dspot.amplifier;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreator;
 import fr.inria.diversify.dspot.amplifier.value.ValueCreatorHelper;
 import fr.inria.diversify.utils.AmplificationHelper;
+import fr.inria.diversify.utils.AmplificationLog;
 import spoon.reflect.code.CtBlock;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtLocalVariable;
@@ -33,7 +34,9 @@ public class ReplacementAmplifier implements Amplifier {
                             .findFirst()
                             .get();
                     CtExpression<?> ctExpression = ValueCreator.generateRandomValue(ctLocalVariable.getType(), localVariable.getAssignment());
+                    CtExpression originalValue = localVariable.getAssignment();
                     localVariable.setAssignment(ctExpression);
+                    AmplificationLog.logModifyAmplification(clone, localVariable.getParent(), localVariable.getRoleInParent(), originalValue, ctExpression);
                     return clone;
                 }).collect(Collectors.toList());
     }

@@ -21,10 +21,7 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.ModifierKind;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -189,6 +186,20 @@ public class DSpot {
             test.getPackage().addType(clone);
             CtType<?> amplification = AmplificationHelper.createAmplifiedTest(testSelector.getAmplifiedTestCases(), clone, testSelector.getMinimizer());
             testSelector.report();
+
+            Gson gson = new GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().disableHtmlEscaping().create();
+            final File fileAmpLog = new File(this.inputConfiguration.getOutputDirectory() + "/" +
+                    test.getQualifiedName() + "_amp_log.json");
+            HashMap<String, ArrayList<AmplificationLog.ActionLog>> newMap = new HashMap<>();
+            AmplificationLog.getKeySet().forEach(methodKey ->
+                    newMap.put(methodKey.getSimpleName(),
+                            AmplificationLog.getAmplifications(methodKey)));
+            try (FileWriter writer = new FileWriter(fileAmpLog, false)) {
+                writer.write(gson.toJson(newMap));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             final File outputDirectory = new File(inputConfiguration.getOutputDirectory());
             LOGGER.info("Print {} with {} amplified test cases in {}", amplification.getSimpleName(),
                     testSelector.getAmplifiedTestCases().size(), this.inputConfiguration.getOutputDirectory());

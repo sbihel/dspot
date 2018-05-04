@@ -8,6 +8,7 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.path.CtRole;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public class AmplificationLog {
@@ -29,7 +30,7 @@ public class AmplificationLog {
     }
 
     public enum AmplificationCategory {
-        ADD, REMOVE, MODIFY
+        ADD, REMOVE, MODIFY, ASSERT
     }
 
     public static class ActionLog {
@@ -41,7 +42,7 @@ public class AmplificationLog {
         public String ampCategory;
 
         private ActionLog(CtElement parent, CtRole role, Object oldValue, Object newValue, AmplificationCategory ampCategory) {
-            this.parent = parent.toString();
+            this.parent = parent.getShortRepresentation();
             this.parentLine = parent.getPosition().getLine();
             this.role = role.toString();
             this.oldValue = oldValue.toString();
@@ -55,6 +56,7 @@ public class AmplificationLog {
     }
 
     private static void addAmplification(CtMethod amplifiedTest, ActionLog actionLog) {
+        LOGGER.info("Amplification logged.");
         if (getInstance().amplificationLog.containsKey(amplifiedTest)) {
             getInstance().amplificationLog.get(amplifiedTest).add(actionLog);
         } else {
@@ -74,5 +76,17 @@ public class AmplificationLog {
 
     public static void logRemoveAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object oldValue) {
         addAmplification(amplifiedTest, new ActionLog(parent, role, oldValue, "", AmplificationCategory.REMOVE));
+    }
+
+    public static void logAssertAmplification(CtMethod amplifiedTest, CtElement parent, CtRole role, Object newValue) {
+        addAmplification(amplifiedTest, new ActionLog(parent, role, "", newValue, AmplificationCategory.ASSERT));
+    }
+
+    public static Set<CtMethod> getKeySet() {
+        return getInstance().amplificationLog.keySet();
+    }
+
+    public static ArrayList<ActionLog> getAmplifications(CtMethod amplifiedTest) {
+        return getInstance().amplificationLog.get(amplifiedTest);
     }
 }

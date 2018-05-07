@@ -206,7 +206,8 @@ public class ExecutedMutantSelector extends TakeAllSelector {
                     pitResults.forEach(pitResult -> mutantsJson.add(new MutantJSON(
                             pitResult.getFullQualifiedNameMutantOperator(),
                             pitResult.getLineNumber(),
-                            pitResult.getNameOfMutatedMethod()
+                            pitResult.getNameOfMutatedMethod(),
+                            pitResult.getFullQualifiedNameOfMutatedClass()
                     )));
                     if (amplifiedTest == null) {
                         testClassJSON.addTestCase(new TestCaseJSON(

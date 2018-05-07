@@ -53,6 +53,10 @@ public class PitResult {
         return fullQualifiedNameMutantOperator;
     }
 
+    public String getFullQualifiedNameOfMutatedClass() {
+        return fullQualifiedNameOfMutatedClass;
+    }
+
     public int getLineNumber() {
         return lineNumber;
     }

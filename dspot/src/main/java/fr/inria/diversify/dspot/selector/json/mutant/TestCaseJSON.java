@@ -10,13 +10,15 @@ import java.util.List;
 public class TestCaseJSON {
 
     private final String name;
+    private final String parentName;
     private final int nbAssertionAdded;
     private final int nbInputAdded;
     private final int nbMutantKilled;
     private final List<MutantJSON> mutantsKilled;
 
-    public TestCaseJSON(String name, int nbAssertionAdded, int nbInputAdded, List<MutantJSON> mutantsKilled) {
+    public TestCaseJSON(String name, String parentName, int nbAssertionAdded, int nbInputAdded, List<MutantJSON> mutantsKilled) {
         this.name = name;
+        this.parentName = parentName;
         this.nbAssertionAdded = nbAssertionAdded;
         this.nbInputAdded = nbInputAdded;
         this.nbMutantKilled = mutantsKilled.size();

@@ -256,6 +256,7 @@ public class PitMutantScoreSelector extends TakeAllSelector {
                     if (amplifiedTest == null) {
                         testClassJSON.addTestCase(new TestCaseJSON(
                                 this.currentClassTestToBeAmplified.getSimpleName(),
+                                this.currentClassTestToBeAmplified.getSimpleName(),
                                 Counter.getAllAssertions(),
                                 Counter.getAllInput(),
                                 mutantsJson
@@ -263,6 +264,7 @@ public class PitMutantScoreSelector extends TakeAllSelector {
                     } else {
                         testClassJSON.addTestCase(new TestCaseJSON(
                                 amplifiedTest.getSimpleName(),
+                                AmplificationHelper.getAmpTestParentName(amplifiedTest),
                                 Counter.getAssertionOfSinceOrigin(amplifiedTest),
                                 Counter.getInputOfSinceOrigin(amplifiedTest),
                                 mutantsJson

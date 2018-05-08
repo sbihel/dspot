@@ -1,5 +1,6 @@
 package fr.inria.diversify.utils;
 
+import com.google.common.collect.MapMaker;
 import eu.stamp.project.testrunner.runner.test.TestListener;
 import fr.inria.diversify.automaticbuilder.AutomaticBuilderFactory;
 import fr.inria.diversify.utils.compilation.DSpotCompiler;
@@ -64,7 +65,9 @@ public class AmplificationHelper {
     /**
      * Link between an amplified test and its parent (i.e. the original test).
      */
-    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new IdentityHashMap<>();
+    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
+
+    private static Map<CtMethod<?>, String> ampTestToParentName = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
 
     @Deprecated
     private static Map<CtType, Set<CtType>> importByClass = new HashMap<>();
@@ -94,6 +97,7 @@ public class AmplificationHelper {
     public static void reset() {
         cloneNumber = 1;
         ampTestToParent.clear();
+        ampTestToParentName.clear();
         importByClass.clear();
     }
 
@@ -138,7 +142,12 @@ public class AmplificationHelper {
         return ampTestToParent.get(amplifiedTest);
     }
 
+    public static String getAmpTestParentName(CtMethod amplifiedTest) {
+        return ampTestToParentName.get(amplifiedTest);
+    }
+
     public static CtMethod removeAmpTestParent(CtMethod amplifiedTest) {
+        ampTestToParentName.remove(amplifiedTest);
         return ampTestToParent.remove(amplifiedTest);
     }
 
@@ -378,6 +387,7 @@ public class AmplificationHelper {
     public static CtMethod cloneTestMethodForAmp(CtMethod method, String suffix) {
         CtMethod clonedMethod = cloneTestMethod(method, suffix);
         ampTestToParent.put(clonedMethod, method);
+        ampTestToParentName.put(clonedMethod, method.getSimpleName());
         return clonedMethod;
     }
 
@@ -487,7 +497,7 @@ public class AmplificationHelper {
         } else {
             tests.stream()
                     .filter(test -> !reducedTests.contains(test))
-                    .forEach(discardedTest -> ampTestToParent.remove(discardedTest));
+                    .forEach(discardedTest -> removeAmpTestParent(discardedTest));
         }
         return reducedTests;
     }

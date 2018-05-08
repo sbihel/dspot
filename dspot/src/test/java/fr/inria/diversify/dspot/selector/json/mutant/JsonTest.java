@@ -23,8 +23,8 @@ public class JsonTest {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         TestClassJSON classJSON = new TestClassJSON(23, "MyTestClass", 1);
-        classJSON.addTestCase(new TestCaseJSON("myTestCase", 1, 1,
-                Collections.singletonList(new MutantJSON("IdMutant", 1, "method"))));
+        classJSON.addTestCase(new TestCaseJSON("myTestCase", "parentTestCase", 1, 1,
+                Collections.singletonList(new MutantJSON("IdMutant", 1, "method", "class"))));
         String actualJson = gson.toJson(classJSON);
 
         assertEquals(expectedJson, actualJson);

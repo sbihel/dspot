@@ -1,6 +1,7 @@
 package fr.inria.stamp.minimization;
 
 import fr.inria.diversify.utils.AmplificationChecker;
+import fr.inria.diversify.utils.Counter;
 import fr.inria.diversify.utils.DSpotUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +93,7 @@ public class GeneralMinimizer implements Minimizer {
             amplifiedTestToBeMinimized.getBody().getStatements().remove(
                     statements.lastIndexOf(duplicatesAssertion)
             );
+            Counter.updateAssertionOf(amplifiedTestToBeMinimized, -1);
         }
     }
 

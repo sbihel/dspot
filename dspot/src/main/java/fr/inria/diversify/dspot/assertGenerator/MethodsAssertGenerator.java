@@ -249,6 +249,7 @@ public class MethodsAssertGenerator {
                             AmplificationLog.logAssertAmplification(testWithAssert, localVariable.getParent(), localVariable.getRoleInParent(), localVariable);
                         } else {
                             addAtCorrectPlace(id, lastStmt, assertStatement, statementToBeAsserted);
+                            AmplificationLog.logAssertAmplification(testWithAssert, assertStatement.getParent(), assertStatement.getRoleInParent(), assertStatement);
                         }
                         lastStmt = assertStatement;
                         numberOfAddedAssertion++;

@@ -44,9 +44,9 @@ public class AmplificationLog {
         private ActionLog(CtElement parent, CtRole role, Object oldValue, Object newValue, AmplificationCategory ampCategory) {
             this.parent = parent.getShortRepresentation();
             this.parentLine = parent.getPosition().getLine();
-            this.role = role.toString();
-            this.oldValue = oldValue.toString();
-            this.newValue = newValue.toString();
+            this.role = (role == null)? "child": role.toString();
+            this.oldValue = (oldValue == null)? "": oldValue.toString();
+            this.newValue = (newValue == null)? "": newValue.toString();
             this.ampCategory = ampCategory.toString();
         }
     }

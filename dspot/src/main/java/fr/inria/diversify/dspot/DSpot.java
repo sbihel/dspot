@@ -210,7 +210,7 @@ public class DSpot {
             }
             writeTimeJson();
             return amplification;
-        } catch (IOException | InterruptedException | ClassNotFoundException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

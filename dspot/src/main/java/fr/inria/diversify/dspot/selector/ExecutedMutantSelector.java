@@ -20,11 +20,7 @@ import org.slf4j.LoggerFactory;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,7 +48,16 @@ public class ExecutedMutantSelector extends TakeAllSelector {
     }
 
     public ExecutedMutantSelector(String pathToInitialResults) {
-        this.originalMutantExecuted = PitResultParser.parse(new File(pathToInitialResults));
+        String pathXml = new String(pathToInitialResults);
+        pathXml = pathXml.substring(0, pathXml.length() - 4);
+        pathXml = pathXml + "xml";
+        FileInputStream fileXml;
+        try {
+            fileXml = new FileInputStream(pathXml);
+        } catch (FileNotFoundException e) {
+            fileXml = null;
+        }
+        this.originalMutantExecuted = PitResultParser.parse(new File(pathToInitialResults), fileXml);
         this.mutantExecutedPerAmplifiedTestMethod = new HashMap<>();
     }
 
@@ -207,7 +212,8 @@ public class ExecutedMutantSelector extends TakeAllSelector {
                             pitResult.getFullQualifiedNameMutantOperator(),
                             pitResult.getLineNumber(),
                             pitResult.getNameOfMutatedMethod(),
-                            pitResult.getFullQualifiedNameOfMutatedClass()
+                            pitResult.getFullQualifiedNameOfMutatedClass(),
+                            pitResult.getMutantDescription()
                     )));
                     if (amplifiedTest == null) {
                         testClassJSON.addTestCase(new TestCaseJSON(

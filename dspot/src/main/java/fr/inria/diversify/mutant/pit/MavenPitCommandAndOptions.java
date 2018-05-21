@@ -13,7 +13,7 @@ public class MavenPitCommandAndOptions {
 
     public static final String OPT_TARGET_CLASSES = "-DtargetClasses=";
 
-    public static final String OPT_VALUE_FORMAT = "-DoutputFormats=CSV,HTML";
+    public static final String OPT_VALUE_FORMAT = "-DoutputFormats=CSV,HTML,XML";
 
     public static final String OPT_TARGET_TESTS = "-DtargetTests=";
 

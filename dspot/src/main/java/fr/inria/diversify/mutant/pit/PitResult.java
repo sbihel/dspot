@@ -20,6 +20,8 @@ public class PitResult {
 
     private final String nameOfMutatedMethod;
 
+    private final String mutantDescription;
+
     private final int lineNumber;
 
     private final State stateOfMutant;
@@ -34,7 +36,8 @@ public class PitResult {
                      String fullQualifiedNameMutantOperator,
                      String fullQualifiedNameMethod, String fullQualifiedNameOfKiller,
                      int lineNumber,
-                     String nameOfLocalisation) {
+                     String nameOfLocalisation,
+                     String mutantDescription) {
         this.fullQualifiedNameOfMutatedClass = fullQualifiedNameOfMutatedClass;
         this.stateOfMutant = stateOfMutant;
         this.fullQualifiedNameMutantOperator = fullQualifiedNameMutantOperator;
@@ -43,6 +46,7 @@ public class PitResult {
         this.simpleNameMethod = split[split.length - 1];
         this.lineNumber = lineNumber;
         this.nameOfMutatedMethod = nameOfLocalisation;
+        this.mutantDescription = mutantDescription;
     }
 
     public State getStateOfMutant() {
@@ -55,6 +59,10 @@ public class PitResult {
 
     public String getFullQualifiedNameOfMutatedClass() {
         return fullQualifiedNameOfMutatedClass;
+    }
+
+    public String getMutantDescription() {
+        return mutantDescription;
     }
 
     public int getLineNumber() {

@@ -11,12 +11,14 @@ public class MutantJSON {
     private int lineNumber;
     private String locationMethod;
     private String locationClass;
+    private String description;
 
-    public MutantJSON(String ID, int lineNumber, String locationMethod, String locationClass) {
+    public MutantJSON(String ID, int lineNumber, String locationMethod, String locationClass, String description) {
         this.ID = ID;
         this.lineNumber = lineNumber;
         this.locationMethod = locationMethod;
         this.locationClass = locationClass;
+        this.description = description;
     }
 
     public String getID() {

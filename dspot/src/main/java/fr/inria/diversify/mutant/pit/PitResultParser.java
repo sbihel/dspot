@@ -2,10 +2,11 @@ package fr.inria.diversify.mutant.pit;
 
 import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,13 @@ public class PitResultParser {
             return null;
         }
         File fileResults = new File(directoryReportPit.getPath() + "/mutations.csv");
-        final List<PitResult> results = PitResultParser.parse(fileResults);
+        FileInputStream fileResultsXml;
+        try {
+            fileResultsXml = new FileInputStream(directoryReportPit.getPath() + "/mutations.xml");
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+        final List<PitResult> results = PitResultParser.parse(fileResults, fileResultsXml);
         try {
             FileUtils.deleteDirectory(directoryReportPit);
         } catch (IOException e) {
@@ -38,8 +45,17 @@ public class PitResultParser {
         return results;
     }
 
-    public static List<PitResult> parse(File fileResults) {
+    public static List<PitResult> parse(File fileResults, FileInputStream fileResultsXml) {
         final List<PitResult> results = new ArrayList<>();
+
+        XMLInputFactory xmlInFact = XMLInputFactory.newInstance();
+        final XMLStreamReader reader;
+        try {
+            reader = xmlInFact.createXMLStreamReader(fileResultsXml);
+        } catch (XMLStreamException e) {
+            return null;
+        }
+
         try (BufferedReader buffer = new BufferedReader(new FileReader(fileResults))) {
             buffer.lines().forEach(line -> {
                 String[] splittedLines = line.split(",");
@@ -69,12 +85,42 @@ public class PitResultParser {
                     }
                     int lineNumber = Integer.parseInt(splittedLines[4]);
                     String location = splittedLines[3];
-                    results.add(new PitResult(fullQualifiedNameOfMutatedClass, state, fullQualifiedNameMutantOperator, fullQualifiedNameMethod, fullQualifiedNameClass, lineNumber, location));
+
+                    int eventType = 0;
+                    try {
+                        eventType = reader.next();
+                    } catch (XMLStreamException e) {
+                        //
+                    }
+                    while (eventType != XMLStreamConstants.START_ELEMENT || !("description".equals(reader.getLocalName()))) {
+                        try {
+                            eventType = reader.next();
+                        } catch (XMLStreamException e) {
+                            //
+                        }
+                    }
+                    try {
+                        reader.next();
+                    } catch (XMLStreamException e) {
+                        //
+                    }
+                    String mutantDescription = reader.getText();
+
+                    results.add(new PitResult(fullQualifiedNameOfMutatedClass, state, fullQualifiedNameMutantOperator, fullQualifiedNameMethod, fullQualifiedNameClass, lineNumber, location, mutantDescription));
                 }
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (XMLStreamException e) {
+                //
+            }
+        }
+
         return results;
     }
 }

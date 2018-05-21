@@ -3,6 +3,7 @@ package fr.inria.diversify.mutant.pit;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -16,7 +17,7 @@ public class PitParserAndResultTest {
 
     @Test
     public void test() throws Exception {
-        final List<PitResult> pitResults = PitResultParser.parse(new File("src/test/resources/mutations_spoon.csv"));
+        final List<PitResult> pitResults = PitResultParser.parse(new File("src/test/resources/mutations_spoon.csv"), new FileInputStream("src/test/resources/mutations_spoon.csv"));
         long nbErrors = pitResults.stream()
                 .filter(pitResult ->
                         pitResult.getStateOfMutant() == PitResult.State.MEMORY_ERROR ||

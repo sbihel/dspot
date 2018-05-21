@@ -55,7 +55,16 @@ public class PitMutantScoreSelector extends TakeAllSelector {
 
     public PitMutantScoreSelector(String pathToOriginalResultOfPit) {
         this();
-        initOriginalPitResult(PitResultParser.parse(new File(pathToOriginalResultOfPit)));
+        String pathXml = new String(pathToOriginalResultOfPit);
+        pathXml = pathXml.substring(0, pathXml.length() - 4);
+        pathXml = pathXml + "xml";
+        FileInputStream fileXml;
+        try {
+            fileXml = new FileInputStream(pathXml);
+        } catch (FileNotFoundException e) {
+            fileXml = null;
+        }
+        initOriginalPitResult(PitResultParser.parse(new File(pathToOriginalResultOfPit), fileXml));
     }
 
     @Override
@@ -251,7 +260,8 @@ public class PitMutantScoreSelector extends TakeAllSelector {
                             pitResult.getFullQualifiedNameMutantOperator(),
                             pitResult.getLineNumber(),
                             pitResult.getNameOfMutatedMethod(),
-                            pitResult.getFullQualifiedNameOfMutatedClass()
+                            pitResult.getFullQualifiedNameOfMutatedClass(),
+                            pitResult.getMutantDescription()
                     )));
                     if (amplifiedTest == null) {
                         testClassJSON.addTestCase(new TestCaseJSON(

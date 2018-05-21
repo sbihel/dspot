@@ -263,6 +263,7 @@ public class JacocoCoverageSelector extends TakeAllSelector {
         }
         this.selectedAmplifiedTest.forEach(ctMethod ->
                 new TestCaseJSON(ctMethod.getSimpleName(),
+                        AmplificationHelper.getAmpTestParentName(ctMethod),
                         Counter.getInputOfSinceOrigin(ctMethod),
                         Counter.getAssertionOfSinceOrigin(ctMethod),
                         this.selectedToBeAmplifiedCoverageResultsMap.get(ctMethod.getSimpleName()).getInstructionsCovered(),

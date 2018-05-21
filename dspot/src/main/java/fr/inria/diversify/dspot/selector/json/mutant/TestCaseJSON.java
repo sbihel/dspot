@@ -18,7 +18,7 @@ public class TestCaseJSON {
 
     public TestCaseJSON(String name, String parentName, int nbAssertionAdded, int nbInputAdded, List<MutantJSON> mutantsKilled) {
         this.name = name;
-        this.parentName = parentName;
+        this.parentName = (parentName == null)? "": parentName;
         this.nbAssertionAdded = nbAssertionAdded;
         this.nbInputAdded = nbInputAdded;
         this.nbMutantKilled = mutantsKilled.size();

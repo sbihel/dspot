@@ -19,7 +19,7 @@ public class AmplificationLog {
     private ConcurrentMap<CtMethod, ArrayList<ActionLog>> amplificationLog;
 
     private AmplificationLog() {
-        this.amplificationLog = new MapMaker().weakKeys().concurrencyLevel(4).makeMap();
+        this.amplificationLog = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
     }
 
     private static AmplificationLog getInstance() {

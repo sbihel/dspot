@@ -15,6 +15,13 @@ DSpot supports Java projects built with Maven and Gradle (see the `--automatic-b
 
 You need Java and Maven.
 
+DSpot uses the environment variable MAVEN_HOME, ensure that this variable points to your maven installation. Example:
+```
+export MAVEN_HOME=path/to/maven/
+```
+
+DSpot uses maven to compile, and build the classpath of your project. The environment variable JAVA_HOME must point to a valid JDK installation (and not a JRE).
+
 ### Compilation
 
 1) Clone the project:
@@ -28,26 +35,21 @@ cd dspot/dspot
 mvn compile
 ```
 
-3) DSpot uses the environment variable MAVEN_HOME, ensure that this variable points to your maven installation. Example:
-```
-export MAVEN_HOME=path/to/maven/
-```
-
-4) Run the tests
+3) Run the tests
 ```
 mvn test
 ```
 
-5) Create the jar (eg `target/dspot-1.0.0-jar-with-dependencies.jar`)
+4) Create the jar (_e.g._ `target/dspot-1.0.0-jar-with-dependencies.jar`)
 ```
 mvn package
 # check that this is successful
 ls target/dspot-*-jar-with-dependencies.jar
 ```
 
-6) Run the jar
+5) Run the jar
 ```
-java -cp target/dspot-*-jar-with-dependencies.jar fr.inria.stamp.Main -p path/To/my.properties
+java -cp target/dspot-*-jar-with-dependencies.jar eu.stamp_project.Main -p path/To/my.properties
 ```
 
 For more info, see section **Usage** below.
@@ -67,7 +69,7 @@ DSpot is licensed un LGPLv3. Pull request as are welcome.
 ### First Tutorial
 
 After having cloned DSpot (see the previous section), you can run the provided example by running
-`fr.inria.stamp.Main` from your IDE, or with
+`eu.stamp_project.Main` from your IDE, or with
 
 ```
 java -jar target/dspot-LATEST-jar-with-dependencies.jar --example
@@ -95,9 +97,6 @@ testSrc=src/test/java
 javaVersion=8
 #path to the output folder
 outputDirectory=target/trash/
-# Constant amount of additional time to allow a test to run for
-# before considering it to be stuck in an infinite loop
-timeoutConstInMillis=10000
 #Argument string to use when PIT launches child processes. This is most commonly used
 # to increase the amount of memory available to the process,
 # but may be used to pass any valid JVM argument.
@@ -149,12 +148,12 @@ You can then execute DSpot by using:
 ```
 java -jar /path/to/dspot-LATEST-jar-with-dependencies.jar --path-to-properties dspot.properties
 # or in maven
-mvn exec:java -Dexec.mainClass="fr.inria.stamp.Main" -Dexec.args="--path-to-properties dspot.properties"
+mvn exec:java -Dexec.mainClass="eu.stamp_project.Main" -Dexec.args="--path-to-properties dspot.properties"
 ```
 
 Amplify a specific test class
 ```
-java -jar /path/to/dspot-*-jar-with-dependencies.jar fr.inria.stamp.Main --path-to-properties dspot.properties --test my.package.TestClass
+java -jar /path/to/dspot-*-jar-with-dependencies.jar eu.stamp_project.Main --path-to-properties dspot.properties --test my.package.TestClass
 ```
 Amplify specific test classes according to a regex
 ```
@@ -251,6 +250,10 @@ Usage: java -jar target/dspot-<version>-jar-with-dependencies.jar
   [--no-minimize]
         Disable the minimization of amplified tests.
 
+  [--working-directory]
+        Enable this option to change working directory with the root of the
+        project.
+
   [-e|--example]
         run the example of DSpot and leave
 
@@ -273,7 +276,7 @@ Here is the list of configuration properties of DSpot:
   * maven.home: path to the executable maven. If no value is specified, it will try some defaults values
     (for instance: `/usr/share/maven/`, `usr/local/Cellar/maven/3.3.9/libexec/` ...).
 * optional properties:
-  * filter: filter on the package name containing tests to be executed (_e.g._ `example.*`) passed to Pitest. If not set, the default value is set automatically by PIT based on the pom.xml data as follows: `filter=<groupid>.<artifactid>.*`. If you set it, we recommand to give the top-most package of your project. (_e.g._ for the test-projects it would be `example.*`)
+  * filter: this property is only used by `PitMutantScoreSelector` (see below). It filters on the package name to introduce mutation inside specific package (_e.g._ `example.*`) passed to PIT. If not set, the default value is set automatically by PIT based on the pom.xml data as follows: `filter=<groupid>.<artifactid>.*`. If you set it, we recommand to give the top-most package of your project. (_e.g._ for the test-projects it would be `example.*`)
   * maven.localRepository: path to the local repository of Maven (.m2), if you need specific settings.
   * excludedClasses: DSpot will not amplify the excluded test classes.
   * additionalClasspathElements: add elements to the classpath. (e.g. a jar file)
@@ -307,13 +310,14 @@ For the amplifiers, you can give them at the constructor of your `DSpot` object,
 
 In **DSpot**, test selectors can be seen as a fitness: it measures the quality of amplified, and keeps only amplified tests that are worthy according to this selector.
 
-The default selector is `CloverCoverageSelector`. This selector is based on [**OpenClover**](http://openclover.org/), which is a tool to compute the coverage. **DSpot** will keep only tests that increase the code coverage.
+The
+The default selector is `PitMutantScoreSelector`. This selector is based on [**PIT**](http://pitest.org/), which is a tool to computation mutation analysis. **DSpot** will keep only tests that increase the mutation score.
 
 Following the list of avalaible test selector:
 
+   * `PitMutantScoreSelector`: uses [**PIT**](http://pitest.org/) to computes the mutation score, and selects amplified tests that kill mutants that was not kill by the original test suite.
    * `CloverCoverageSelector`: uses [**OpenClover**](http://openclover.org/) to compute branch coverage, and selects amplified tests that increase it.
    * `JacocoCoverageSelector`: uses [**JaCoCo**](http://www.eclemma.org/jacoco/) to compute instruction coverage and executed paths (the order matters). Selects test that increase the coverage and has unique executed path.
-   * `PitMutantScoreSelector`: uses [**PIT**](http://pitest.org/) to computes the mutation score, and selects amplified tests that kill mutants that was not kill by the original test suite.
    * `ExecutedMutantSelector`: uses [**PIT**](http://pitest.org/) to computes the number of executed mutants. It uses the number of mutants as a proxy for the instruction coverage. It selects amplfied test that execute new mutants. **WARNING!!** this selector takes a lot of time, and is not worth it, please look at CloverCoverageSelector or JacocoCoverageSelector.
    * `TakeAllSelector`: keeps all amplified tests not matter the quality.
    * `ChangeDetectorSelector`: runs against a second version of the same program, and selects amplified tests that fail. This selector selects only amplified test that are able to show a difference of a behavior betweeen two versions of the same program.
@@ -326,7 +330,7 @@ Following the list of avalaible test selector:
 
 1. If any test class has been modified between the two versions, **DSpot** selects them.
 2. If there is not, **DSpot** selects test cases (and so, their test classes) according to the nem. If a test contain the name of a modified method, this test is selected.
-3. If there is not, **DSpot** analyzes statical the test suite and selects test classes that invoke modified methods. The maximum number of selected test classes is the value of `fr.inria.stamp.diff.SelectorOnDiff.MAX_NUMBER_TEST_CLASSES`, randomly.
+3. If there is not, **DSpot** analyzes statical the test suite and selects test classes that invoke modified methods. The maximum number of selected test classes is the value of `eu.stamp_project.diff.SelectorOnDiff.MAX_NUMBER_TEST_CLASSES`, randomly.
 
 The requirements this feature is the following:
 

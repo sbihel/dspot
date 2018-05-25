@@ -149,7 +149,10 @@ public class GeneralMinimizer implements Minimizer {
                     .get()
                     .replace(localVariable.getAssignment().clone());
             return localVariable;
-        }).forEach(amplifiedTestToBeMinimized.getBody()::removeStatement);
+        }).forEach(localVariable -> {
+            amplifiedTestToBeMinimized.getBody().removeStatement(localVariable);
+            Counter.updateAssertionOf(amplifiedTestToBeMinimized, -1);
+        });
         //TODO we can inline all local variables that are used only in assertion
     }
 

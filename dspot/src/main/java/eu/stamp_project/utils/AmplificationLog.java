@@ -8,6 +8,8 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.path.CtRole;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -16,10 +18,10 @@ public class AmplificationLog {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AmplificationLog.class);
 
-    private ConcurrentMap<CtMethod, ArrayList<ActionLog>> amplificationLog;
+    private Map<CtMethod, ArrayList<ActionLog>> amplificationLog;
 
     private AmplificationLog() {
-        this.amplificationLog = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
+        this.amplificationLog = new IdentityHashMap<>();
     }
 
     private static AmplificationLog getInstance() {

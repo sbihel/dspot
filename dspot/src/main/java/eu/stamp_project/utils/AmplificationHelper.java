@@ -67,9 +67,9 @@ public class AmplificationHelper {
     /**
      * Link between an amplified test and its parent (i.e. the original test).
      */
-    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
+    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new IdentityHashMap<>();
 
-    private static Map<CtMethod<?>, String> ampTestToParentName = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
+    private static Map<CtMethod<?>, String> ampTestToParentName = new IdentityHashMap<>();
 
     @Deprecated
     private static Map<CtType, Set<CtType>> importByClass = new HashMap<>();

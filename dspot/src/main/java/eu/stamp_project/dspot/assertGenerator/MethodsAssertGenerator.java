@@ -51,7 +51,7 @@ public class MethodsAssertGenerator {
         this.originalClass = originalClass;
         this.configuration = configuration;
         this.compiler = compiler;
-        this.factory = configuration.getInputProgram().getFactory();
+        this.factory = configuration.getFactory();
     }
 
     /**

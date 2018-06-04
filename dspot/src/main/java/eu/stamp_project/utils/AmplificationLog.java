@@ -8,20 +8,18 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.path.CtRole;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 public class AmplificationLog {
     private static AmplificationLog _instance;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AmplificationLog.class);
 
-    private Map<CtMethod, ArrayList<ActionLog>> amplificationLog;
+    private Map<String, ArrayList<ActionLog>> amplificationLog;
 
     private AmplificationLog() {
-        this.amplificationLog = new IdentityHashMap<>();
+        this.amplificationLog = new MapMaker().concurrencyLevel(16).makeMap();
     }
 
     private static AmplificationLog getInstance() {
@@ -59,12 +57,12 @@ public class AmplificationLog {
 
     private static void addAmplification(CtMethod amplifiedTest, ActionLog actionLog) {
         LOGGER.info("Amplification logged.");
-        if (getInstance().amplificationLog.containsKey(amplifiedTest)) {
-            getInstance().amplificationLog.get(amplifiedTest).add(actionLog);
+        if (getInstance().amplificationLog.containsKey(amplifiedTest.getSimpleName())) {
+            getInstance().amplificationLog.get(amplifiedTest.getSimpleName()).add(actionLog);
         } else {
             ArrayList<ActionLog> newAmpArray = new ArrayList<>();
             newAmpArray.add(actionLog);
-            getInstance().amplificationLog.put(amplifiedTest, newAmpArray);
+            getInstance().amplificationLog.put(amplifiedTest.getSimpleName(), newAmpArray);
         }
     }
 
@@ -84,11 +82,11 @@ public class AmplificationLog {
         addAmplification(amplifiedTest, new ActionLog(parent, role, "", newValue, AmplificationCategory.ASSERT));
     }
 
-    public static Set<CtMethod> getKeySet() {
+    public static Set<String> getKeySet() {
         return getInstance().amplificationLog.keySet();
     }
 
-    public static ArrayList<ActionLog> getAmplifications(CtMethod amplifiedTest) {
+    public static ArrayList<ActionLog> getAmplifications(String amplifiedTest) {
         return getInstance().amplificationLog.get(amplifiedTest);
     }
 }

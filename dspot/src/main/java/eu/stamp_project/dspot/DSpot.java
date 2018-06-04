@@ -201,7 +201,7 @@ public class DSpot {
                     test.getQualifiedName() + "_amp_log.json");
             HashMap<String, ArrayList<AmplificationLog.ActionLog>> newMap = new HashMap<>();
             AmplificationLog.getKeySet().forEach(methodKey ->
-                    newMap.put(methodKey.getSimpleName(),
+                    newMap.put(methodKey,
                             AmplificationLog.getAmplifications(methodKey)));
             try (FileWriter writer = new FileWriter(fileAmpLog, false)) {
                 writer.write(gson.toJson(newMap));

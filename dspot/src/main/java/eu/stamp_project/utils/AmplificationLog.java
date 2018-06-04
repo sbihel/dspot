@@ -89,4 +89,17 @@ public class AmplificationLog {
     public static ArrayList<ActionLog> getAmplifications(String amplifiedTest) {
         return getInstance().amplificationLog.get(amplifiedTest);
     }
+
+    public static void removeStatement(String amplifiedTest, String statement) {
+        ArrayList<ActionLog> amps = getInstance().amplificationLog.get(amplifiedTest);
+        for (ActionLog amp : amps) {
+            if (amp.newValue == statement) {
+                amps.remove(amp);
+                break;
+            }
+        }
+        if (amps.isEmpty()) {
+            getInstance().amplificationLog.remove(amplifiedTest);
+        }
+    }
 }

@@ -1,6 +1,8 @@
 package eu.stamp_project.minimization;
 
+import eu.stamp_project.dspot.Amplification;
 import eu.stamp_project.utils.AmplificationChecker;
+import eu.stamp_project.utils.AmplificationLog;
 import eu.stamp_project.utils.Counter;
 import eu.stamp_project.utils.DSpotUtils;
 import org.slf4j.Logger;
@@ -98,7 +100,9 @@ public class GeneralMinimizer implements Minimizer {
         }
         if (canBeRemoved) {
             block.getStatements().remove(statements.lastIndexOf(duplicatesAssertion));
-            Counter.updateAssertionOf(block.getParent(CtMethod.class), -1);
+            CtMethod amplifiedTest = block.getParent(CtMethod.class);
+            Counter.updateAssertionOf(amplifiedTest, -1);
+            AmplificationLog.removeStatement(amplifiedTest.getSimpleName(), duplicatesAssertion.toString());
         }
     }
 
@@ -148,10 +152,18 @@ public class GeneralMinimizer implements Minimizer {
                     ).findFirst()
                     .get()
                     .replace(localVariable.getAssignment().clone());
+            AmplificationLog.getAmplifications(amplifiedTestToBeMinimized.getSimpleName()).stream()
+                    .map(actionLog -> {
+                        if (actionLog.newValue.contains(localVariable.getReference().toString())) {
+                            actionLog.newValue.replace(localVariable.getReference().toString(), localVariable.getAssignment().toString());
+                        }
+                        return actionLog;
+                    });
             return localVariable;
         }).forEach(localVariable -> {
             amplifiedTestToBeMinimized.getBody().removeStatement(localVariable);
             Counter.updateAssertionOf(amplifiedTestToBeMinimized, -1);
+            AmplificationLog.removeStatement(amplifiedTestToBeMinimized.getSimpleName(), localVariable.toString());
         });
         //TODO we can inline all local variables that are used only in assertion
     }

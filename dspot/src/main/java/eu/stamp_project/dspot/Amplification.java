@@ -87,6 +87,7 @@ public class Amplification {
             LOGGER.warn("No test has been found into {}", classTest.getQualifiedName());
             return;
         }
+        resetAmplifiers(classTest);
         LOGGER.info("amplification of {} ({} test(s))", classTest.getQualifiedName(), tests.size());
         preAmplification(classTest, tests);
         LOGGER.info("{} amplified test(s) has been selected, global: {}", this.testSelector.getAmplifiedTestCases().size() - ampTestCount, this.testSelector.getAmplifiedTestCases().size());
@@ -95,7 +96,6 @@ public class Amplification {
         if (this.amplifiers.isEmpty()) {
             return;
         }
-        resetAmplifiers(classTest);
         for (int i = 0; i < tests.size(); i++) {
             CtMethod test = tests.get(i);
             LOGGER.info("amp {} ({}/{})", test.getSimpleName(), i + 1, tests.size());

@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,9 +66,9 @@ public class AmplificationHelper {
     /**
      * Link between an amplified test and its parent (i.e. the original test).
      */
-    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new IdentityHashMap<>();
+    private static Map<CtMethod<?>, CtMethod> ampTestToParent = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
 
-    private static Map<CtMethod<?>, String> ampTestToParentName = new IdentityHashMap<>();
+    private static Map<CtMethod<?>, String> ampTestToParentName = new MapMaker().weakKeys().concurrencyLevel(16).makeMap();
 
     @Deprecated
     private static Map<CtType, Set<CtType>> importByClass = new HashMap<>();
